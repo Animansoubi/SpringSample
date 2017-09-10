@@ -11,32 +11,37 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity
+@EnableGlobalMethodSecurity(securedEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-
-        http.csrf().disable().authorizeRequests()
-                .antMatchers("/").permitAll()
-                .antMatchers(HttpMethod.POST, "/login").permitAll()
-                .anyRequest().authenticated()
+        http
+                .httpBasic()
                 .and()
-                // We filter the api/login requests
+                .authorizeRequests()
+                .antMatchers("/hello/**")
+                .hasRole("USER")
+                .antMatchers(HttpMethod.POST, "/login")
+                .permitAll()
+                .anyRequest().authenticated()
+                .antMatchers("/**")
+                .hasRole("ADMIN")
+                .and()
                 .addFilterBefore(new JWTLoginFilter("/login", authenticationManager()),
-                        UsernamePasswordAuthenticationFilter.class);
-                // And filter other requests to check the presence of JWT in header
-                //.addFilterBefore(new JWTAuthenticationFilter(),
-                        //UsernamePasswordAuthenticationFilter.class);
-
+                        UsernamePasswordAuthenticationFilter.class)
+                .csrf().disable().headers().frameOptions().disable();
     }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        // Create a default account
-        auth.inMemoryAuthentication()
-                .withUser("anahid")
+        auth
+                .inMemoryAuthentication()
+                .withUser("mohammad")
                 .password("107894")
+                .roles("USER")
+                .and()
+                .withUser("user")
+                .password("password")
                 .roles("ADMIN");
     }
 }
